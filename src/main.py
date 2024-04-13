@@ -1,5 +1,7 @@
 import asyncio
+import json
 import time
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -20,6 +22,8 @@ from contextlib import asynccontextmanager
 
 # Imports required by the service's model
 # TODO: 1. ADD REQUIRED IMPORTS (ALSO IN THE REQUIREMENTS.TXT)
+import requests
+
 
 settings = get_settings()
 
@@ -27,7 +31,7 @@ settings = get_settings()
 class MyService(Service):
     # TODO: 2. CHANGE THIS DESCRIPTION
     """
-    My service model
+    Hugging Face service uses Hugging Face's model hub API to directly query AI models
     """
 
     # Any additional fields must be excluded for Pydantic to work
@@ -37,8 +41,8 @@ class MyService(Service):
     def __init__(self):
         super().__init__(
             # TODO: 3. CHANGE THE SERVICE NAME AND SLUG
-            name="My Service",
-            slug="my-service",
+            name="Hugging Face text-to-text",
+            slug="hugging-face-text-to-text",
             url=settings.service_url,
             summary=api_summary,
             description=api_description,
@@ -46,11 +50,16 @@ class MyService(Service):
             # TODO: 4. CHANGE THE INPUT AND OUTPUT FIELDS, THE TAGS AND THE HAS_AI VARIABLE
             data_in_fields=[
                 FieldDescription(
-                    name="image",
+                    name="json_description",
                     type=[
-                        FieldDescriptionType.IMAGE_PNG,
-                        FieldDescriptionType.IMAGE_JPEG,
+                        FieldDescriptionType.APPLICATION_JSON
                     ],
+                ),
+                FieldDescription(
+                    name="input_text",
+                    type=[
+                        FieldDescriptionType.TEXT_PLAIN
+                    ]
                 ),
             ],
             data_out_fields=[
@@ -60,11 +69,11 @@ class MyService(Service):
             ],
             tags=[
                 ExecutionUnitTag(
-                    name=ExecutionUnitTagName.IMAGE_PROCESSING,
-                    acronym=ExecutionUnitTagAcronym.IMAGE_PROCESSING,
+                    name=ExecutionUnitTagName.NATURAL_LANGUAGE_PROCESSING,
+                    acronym=ExecutionUnitTagAcronym.NATURAL_LANGUAGE_PROCESSING,
                 ),
             ],
-            has_ai=False,
+            has_ai=True,
             # OPTIONAL: CHANGE THE DOCS URL TO YOUR SERVICE'S DOCS
             docs_url="https://docs.swiss-ai-center.ch/reference/core-concepts/service/",
         )
@@ -79,9 +88,22 @@ class MyService(Service):
         # input_type = data["image"].type
         # ... do something with the raw data
 
-        # NOTE that the result must be a dictionary with the keys being the field names set in the data_out_fields
+        json_description = json.loads(data['json_description'].data.decode('utf-8'))
+        api_token = json_description['api_token']
+        api_url = json_description['api_url']
+        headers = {"Authorization": f"Bearer {api_token}"}
+
+        def natural_language_query(payload):
+            response = requests.post(api_url, headers=headers, json=payload)
+            return response.content
+
+        input_text_bytes = data['input_text'].data
+        json_input_text = f'{{ "inputs" : "{input_text_bytes.decode("utf-8")}" }}'
+        json_payload = json.loads(json_input_text)
+        result_data = natural_language_query(json_payload)
         return {
-            "result": TaskData(data=..., type=FieldDescriptionType.APPLICATION_JSON)
+            "result": TaskData(data=result_data,
+                               type=FieldDescriptionType.APPLICATION_JSON)
         }
 
 
@@ -136,18 +158,16 @@ async def lifespan(app: FastAPI):
 
 
 # TODO: 6. CHANGE THE API DESCRIPTION AND SUMMARY
-api_description = """My service
-bla bla bla...
+api_description = """The service is used to query text-to-text AI models from the Hugging Face inference API.
 """
-api_summary = """My service
-bla bla bla...
+api_summary = """This service is used to query text-to-text models from Hugging Face 
 """
 
 # Define the FastAPI application with information
 # TODO: 7. CHANGE THE API TITLE, VERSION, CONTACT AND LICENSE
 app = FastAPI(
     lifespan=lifespan,
-    title="Sample Service API.",
+    title="Hugging Face text-to-text service",
     description=api_description,
     version="0.0.1",
     contact={
