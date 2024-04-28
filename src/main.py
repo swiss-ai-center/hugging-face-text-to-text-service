@@ -2,7 +2,6 @@ import asyncio
 import json
 import time
 
-import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -22,14 +21,12 @@ from common_code.common.models import FieldDescription, ExecutionUnitTag
 from contextlib import asynccontextmanager
 
 # Imports required by the service's model
-# TODO: 1. ADD REQUIRED IMPORTS (ALSO IN THE REQUIREMENTS.TXT)
 import requests
 
 settings = get_settings()
 
 
 class MyService(Service):
-    # TODO: 2. CHANGE THIS DESCRIPTION
     """
     Hugging Face service uses Hugging Face's model hub API to directly query text-to-text AI models
     """
@@ -40,14 +37,12 @@ class MyService(Service):
 
     def __init__(self):
         super().__init__(
-            # TODO: 3. CHANGE THE SERVICE NAME AND SLUG
             name="Hugging Face text-to-text",
             slug="hugging-face-text-to-text",
             url=settings.service_url,
             summary=api_summary,
             description=api_description,
             status=ServiceStatus.AVAILABLE,
-            # TODO: 4. CHANGE THE INPUT AND OUTPUT FIELDS, THE TAGS AND THE HAS_AI VARIABLE
             data_in_fields=[
                 FieldDescription(
                     name="json_description",
@@ -74,19 +69,11 @@ class MyService(Service):
                 ),
             ],
             has_ai=True,
-            # OPTIONAL: CHANGE THE DOCS URL TO YOUR SERVICE'S DOCS
-            docs_url="https://docs.swiss-ai-center.ch/reference/core-concepts/service/",
+            docs_url="https://docs.swiss-ai-center.ch/reference/services/hugging-face-text-to-text/",
         )
         self._logger = get_logger(settings)
 
-    # TODO: 5. CHANGE THE PROCESS METHOD (CORE OF THE SERVICE)
     def process(self, data):
-        # NOTE that the data is a dictionary with the keys being the field names set in the data_in_fields
-        # The objects in the data variable are always bytes. It is necessary to convert them to the desired type
-        # before using them.
-        # raw = data["image"].data
-        # input_type = data["image"].type
-        # ... do something with the raw data
         def is_valid_json(json_string):
             try:
                 json.loads(json_string)
@@ -185,11 +172,10 @@ async def lifespan(app: FastAPI):
         await service_service.graceful_shutdown(my_service, engine_url)
 
 
-# TODO: 6. CHANGE THE API DESCRIPTION AND SUMMARY
 api_description = """The service is used to query text-to-image AI models from the Hugging Face inference API.\n
 
 You can choose from any model available on the inference API from the [Hugging Face Hub](https://huggingface.co/models)
-that takes a text(.txt) as input and outputs text(json). It must take only one text and have the following input 
+that takes a text(.txt) as input and outputs text(json). It must take only one text and have the following input
 structure:
 
 ```
@@ -219,16 +205,15 @@ Helpful trick: The answer from the inference API is cached, so if you encounter 
 input to check if the model is loaded.
 """
 
-api_summary = """This service is used to query text-to-text models from Hugging Face 
+api_summary = """This service is used to query text-to-text models from Hugging Face
 """
 
 # Define the FastAPI application with information
-# TODO: 7. CHANGE THE API TITLE, VERSION, CONTACT AND LICENSE
 app = FastAPI(
     lifespan=lifespan,
     title="Hugging Face text-to-text service",
     description=api_description,
-    version="0.0.1",
+    version="1.0.0",
     contact={
         "name": "Swiss AI Center",
         "url": "https://swiss-ai-center.ch/",
