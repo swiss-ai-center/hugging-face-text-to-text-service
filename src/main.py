@@ -59,7 +59,8 @@ class MyService(Service):
             ],
             data_out_fields=[
                 FieldDescription(
-                    name="result", type=[FieldDescriptionType.APPLICATION_JSON]
+                    name="result", type=[FieldDescriptionType.APPLICATION_JSON,
+                                         FieldDescriptionType.TEXT_PLAIN]
                 ),
             ],
             tags=[
@@ -110,11 +111,17 @@ class MyService(Service):
         if 'desired_output' in json_description:
             desired_output = json_description['desired_output']
             if isinstance(result_data.json(), list):
-                output_list = [{desired_output: data[desired_output]} for data in result_data.json() if desired_output
+                output_list = [data[desired_output] for data in result_data.json() if desired_output
                                in data]
-                output = json.dumps(output_list, indent=4)
+                # This list should contain only one element, the desired output field from the received JSON
+                output = output_list[0]
             else:
-                output = json.dumps({desired_output: result_data.json()[desired_output]})
+                output = result_data.json()[desired_output]
+
+            return {
+                "result": TaskData(data=output,
+                                   type=FieldDescriptionType.TEXT_PLAIN)
+            }
 
         return {
             "result": TaskData(data=output,
@@ -175,8 +182,9 @@ async def lifespan(app: FastAPI):
 api_description = """The service is used to query text-to-image AI models from the Hugging Face inference API.\n
 
 You can choose from any model available on the inference API from the [Hugging Face Hub](https://huggingface.co/models)
-that takes a text(.txt) as input and outputs text(json). It must take only one text and have the following input
-structure:
+that takes a text(json) as input and outputs text(json). 
+
+It must take only one json input with the following structure:
 
 ```
 {
@@ -198,6 +206,11 @@ json_description.json example:
 }
 ```
 This model, "gpt2", is used for text generation.
+
+!!! note
+
+    If you don't specify a desired output, the service will return the whole JSON file (.json).
+    If you do specify an output, the response will be a text file containing the given field data.
 
 The model may need some time to load on Hugging face's side, you may encounter an error on your first try.
 
