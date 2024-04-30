@@ -182,7 +182,7 @@ async def lifespan(app: FastAPI):
 api_description = """The service is used to query text-to-image AI models from the Hugging Face inference API.\n
 
 You can choose from any model available on the inference API from the [Hugging Face Hub](https://huggingface.co/models)
-that takes a text(json) as input and outputs text(json). 
+that takes a text(json) as input and outputs text(json).
 
 It must take only one json input with the following structure:
 
