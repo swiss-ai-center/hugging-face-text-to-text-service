@@ -59,8 +59,7 @@ class MyService(Service):
             ],
             data_out_fields=[
                 FieldDescription(
-                    name="result", type=[FieldDescriptionType.APPLICATION_JSON,
-                                         FieldDescriptionType.TEXT_PLAIN]
+                    name="result", type=[FieldDescriptionType.APPLICATION_JSON]
                 ),
             ],
             tags=[
@@ -97,6 +96,15 @@ class MyService(Service):
             response = requests.post(api_url, headers=headers, json=payload)
             return response
 
+        def flatten_list(lst):
+            flattened_list = []
+            for item in lst:
+                if isinstance(item, list):
+                    flattened_list.extend(item)
+                else:
+                    flattened_list.append(item)
+            return flattened_list
+
         input_text_bytes = data['input_text'].data
         json_input_text = f'{{ "inputs" : "{input_text_bytes.decode("utf-8")}" }}'
         json_payload = json.loads(json_input_text)
@@ -108,20 +116,17 @@ class MyService(Service):
                 raise Exception(data['error'])
 
         output = json.dumps(result_data.json(), indent=4)
+
         if 'desired_output' in json_description:
             desired_output = json_description['desired_output']
             if isinstance(result_data.json(), list):
-                output_list = [data[desired_output] for data in result_data.json() if desired_output
+                flat_list = flatten_list(result_data.json())
+                # If several objects contain the desired output, append them all to one string.
+                output_list = [{desired_output: data[desired_output]} for data in flat_list if desired_output
                                in data]
-                # This list should contain only one element, the desired output field from the received JSON
-                output = output_list[0]
+                output = json.dumps(output_list, indent=4)
             else:
                 output = result_data.json()[desired_output]
-
-            return {
-                "result": TaskData(data=output,
-                                   type=FieldDescriptionType.TEXT_PLAIN)
-            }
 
         return {
             "result": TaskData(data=output,
