@@ -121,7 +121,7 @@ class MyService(Service):
             desired_output = json_description['desired_output']
             if isinstance(result_data.json(), list):
                 flat_list = flatten_list(result_data.json())
-                # If several objects contain the desired output, append them all to one string.
+                # If several objects contain the desired output, return all the objects with that field only.
                 output_list = [{desired_output: data[desired_output]} for data in flat_list if desired_output
                                in data]
                 output = json.dumps(output_list, indent=4)
