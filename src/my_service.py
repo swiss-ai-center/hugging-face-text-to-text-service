@@ -7,6 +7,8 @@ from common_code.common.models import FieldDescription, ExecutionUnitTag
 from common_code.tasks.models import TaskData
 # Imports required by the service's model
 import requests
+import json
+
 api_description = """The service is used to query text-to-image AI models from the Hugging Face inference API.\n
 
 You can choose from any model available on the inference API from the [Hugging Face Hub](https://huggingface.co/models)
@@ -160,4 +162,3 @@ class MyService(Service):
             "result": TaskData(data=output,
                                type=FieldDescriptionType.APPLICATION_JSON)
         }
-
